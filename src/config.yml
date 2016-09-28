@@ -1,0 +1,12 @@
+delayifnofreespace: true
+
+ticks:
+    freezetoanvil:   100
+    freezetothaw:    200
+    freezetoremove:  150
+
+message:
+    freeze:         "Your feet are frozen to the ground!"
+    anvil:          "A heavy anvil appears in the sky above you!"
+    thaw:           "You can move again."
+    remove:         "The anvil disappears."

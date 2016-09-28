@@ -1,0 +1,10 @@
+## YAML Template.
+name: Anvil
+main: de.guntram.bukkit.anvil.Anvil
+version: 0.10
+commands:
+    anvil:
+        description: Let an anvil drop on a player.
+        usage: /anvil <playername>
+        permission: anvil.drop
+        permission-message: You need the anvil.drop permission.
