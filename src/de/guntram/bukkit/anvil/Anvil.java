@@ -2,7 +2,6 @@ package de.guntram.bukkit.anvil;
 
 import java.util.ArrayList;
 import java.util.logging.Logger;
-import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.command.Command;
@@ -65,10 +64,10 @@ public class Anvil extends JavaPlugin implements Listener {
         if (event.getEntity().getItemStack().getType()==Material.ANVIL) {
             Location loc=event.getLocation();
             if (isSpawnPreventLocation(loc)) {
-                Bukkit.broadcastMessage("Prevented Anvil spawn at "+loc.getX()+"/"+loc.getY()+"/"+loc.getZ());
+                // Bukkit.broadcastMessage("Prevented Anvil spawn at "+loc.getX()+"/"+loc.getY()+"/"+loc.getZ());
                 event.setCancelled(true);
             } else {
-                Bukkit.broadcastMessage("Allowed Anvil spawn at "+loc.getX()+"/"+loc.getY()+"/"+loc.getZ());
+                // Bukkit.broadcastMessage("Allowed Anvil spawn at "+loc.getX()+"/"+loc.getY()+"/"+loc.getZ());
             }
         } else {
 //            Bukkit.broadcastMessage("ItemSpawn "+event.getEntity().getItemStack().getType());
@@ -87,13 +86,13 @@ public class Anvil extends JavaPlugin implements Listener {
     }
     
     public void addSpawnPreventLocation(Location loc) {
-        Bukkit.broadcastMessage("Add prevent anvil spawn at "+loc.getBlockX()+"/"+loc.getBlockY()+"/"+loc.getBlockZ());
+        // Bukkit.broadcastMessage("Add prevent anvil spawn at "+loc.getBlockX()+"/"+loc.getBlockY()+"/"+loc.getBlockZ());
         anvilSpawnPreventLocations.add(loc);
     }
     
     public void removeSpawnPreventLocation(Location loc) {
         // Bah, this is a quick and ugly hack to avoid ConcurrentModificationExceptions
-        Bukkit.broadcastMessage("Remove prevent anvil spawn at "+loc.getBlockX()+"/"+loc.getBlockY()+"/"+loc.getBlockZ());
+        // Bukkit.broadcastMessage("Remove prevent anvil spawn at "+loc.getBlockX()+"/"+loc.getBlockY()+"/"+loc.getBlockZ());
         ArrayList tempList=new ArrayList<Location>();
         for (Location tmp:anvilSpawnPreventLocations) {
             if (tmp.getBlockX()==loc.getBlockX()
