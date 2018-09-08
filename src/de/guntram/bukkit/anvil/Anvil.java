@@ -1,7 +1,6 @@
 package de.guntram.bukkit.anvil;
 
 import java.util.ArrayList;
-import java.util.logging.Logger;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.command.Command;
@@ -15,17 +14,12 @@ import org.bukkit.plugin.java.JavaPlugin;
 
 public class Anvil extends JavaPlugin implements Listener {
 
-    private Logger logger;
     private FileConfiguration config;
-    
-    private static final int ticksPerSecond=20;
-    
     private ArrayList<Location> anvilSpawnPreventLocations;
 
     @Override
     public void onEnable() {
 
-        logger=getLogger();
         saveDefaultConfig();
         
         config=getConfig();
@@ -42,7 +36,7 @@ public class Anvil extends JavaPlugin implements Listener {
                 String message;
                 if (sender.hasPermission("anvil.drop")) {
                     try {
-                        AnvilDropper dropper=new AnvilDropper(args[0], this, config);
+                        AnvilDropper dropper=new AnvilDropper(sender.getName(), args[0], this, config);
                         message=dropper.getMessage();
                     } catch (CannotDropAnvilException ex) {
                         message=ex.getMessage();
@@ -93,7 +87,7 @@ public class Anvil extends JavaPlugin implements Listener {
     public void removeSpawnPreventLocation(Location loc) {
         // Bah, this is a quick and ugly hack to avoid ConcurrentModificationExceptions
         // Bukkit.broadcastMessage("Remove prevent anvil spawn at "+loc.getBlockX()+"/"+loc.getBlockY()+"/"+loc.getBlockZ());
-        ArrayList tempList=new ArrayList<Location>();
+        ArrayList<Location> tempList=new ArrayList<>();
         for (Location tmp:anvilSpawnPreventLocations) {
             if (tmp.getBlockX()==loc.getBlockX()
             &&  tmp.getBlockY()==loc.getBlockY()

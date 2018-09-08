@@ -1,24 +1,26 @@
 package de.guntram.bukkit.anvil;
 
 import java.util.UUID;
+import java.util.logging.Level;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.World;
+import org.bukkit.block.Block;
 import org.bukkit.configuration.Configuration;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
-import org.bukkit.plugin.Plugin;
 
 public class AnvilDropper implements Runnable {
     private final UUID playerUUID;
-    private final String playerName;
+
     long ticksSinceInception;
     private final long ticksToThrowAnvil;
     private final long ticksToThawPlayer;
     private final long ticksToRemoveAnvil;
     private final Anvil plugin;
     private final String message;
+    private final String senderName;
     private boolean anvilThrown;
     private boolean playerThawed;
     private boolean anvilRemoved;
@@ -42,10 +44,9 @@ public class AnvilDropper implements Runnable {
     
     public String getMessage() { return message; }
     
-    private boolean isSpaceAbove(Location location) {
-        boolean freeSpace=true;
+    private boolean isAppropriateForAnvilDrop(Location location) {
         World world=playerPosition.getWorld();
-        for (int i=0; i<anvilHeight; i++) {
+        for (int i=0; i<=anvilHeight; i++) {
             if (world.getBlockAt(playerPosition.getBlockX(),
                                  playerPosition.getBlockY()+i,
                                  playerPosition.getBlockZ()).getType() != Material.AIR) {
@@ -57,13 +58,11 @@ public class AnvilDropper implements Runnable {
                 world.getBlockAt(playerPosition.getBlockX(),
                                  playerPosition.getBlockY()-1,
                                  playerPosition.getBlockZ()).getType();
-        if (!below.isOccluding())
-            return false;
-                
-        return true;
+        return below.isOccluding();
     }
     
-    public AnvilDropper(String playerName, Anvil plugin, Configuration config)
+    @SuppressWarnings("LeakingThisInConstructor")
+    public AnvilDropper(String senderName, String playerName, Anvil plugin, Configuration config)
                                         throws CannotDropAnvilException {
         
         if (anvilHeight==0) {
@@ -73,8 +72,8 @@ public class AnvilDropper implements Runnable {
         if (player==null) {
             throw new CannotDropAnvilException("No player with that name: "+playerName);
         }
+        this.senderName=senderName;
         playerUUID=player.getUniqueId();
-        this.playerName=playerName;
         ticksSinceInception=0;
         ticksToThrowAnvil=config.getInt("ticks.freezetoanvil", 100);
         ticksToThawPlayer=config.getInt("ticks.freezetothaw" , 200);
@@ -84,7 +83,7 @@ public class AnvilDropper implements Runnable {
         this.plugin=plugin;
         playerPosition=player.getLocation();
 
-        if (!isSpaceAbove(playerPosition)) {
+        if (!isAppropriateForAnvilDrop(playerPosition)) {
             if (delayIfNoFreeSpace) {
                 waitingForFreeSpace=true;
                 message="Will drop an anvil on "+playerName+" as soon as they move to air";
@@ -121,7 +120,7 @@ public class AnvilDropper implements Runnable {
         }
         
         if (waitingForFreeSpace) {
-            if (!isSpaceAbove(playerPosition=player.getLocation())) {
+            if (!isAppropriateForAnvilDrop(playerPosition=player.getLocation())) {
                 // While the player is moving, don't retry on each tick - every 5th is sufficient
                 Bukkit.getServer().getScheduler().scheduleSyncDelayedTask(plugin, this, 5);
                 return;
@@ -137,7 +136,13 @@ public class AnvilDropper implements Runnable {
         if (!anvilThrown && ticksSinceInception > ticksToThrowAnvil) {
             anvilThrown=true;
             ItemStack anvil=new ItemStack(Material.ANVIL, 1);
-            Location anvilPos=playerPosition.clone().add(0, 5, 0);
+            // Unfortunately, setting the name of the item doesn't set the name of the (falling) block.
+            // Try with /give Giselbaer minecraft:anvil{display:{Name:"{\"text\":\"Punisher\"}"}} 1, 
+            // then placing that somewhere and breaking it.
+            //ItemMeta meta = anvil.getItemMeta();
+            //meta.setDisplayName(senderName + "'s Punishment");
+            //anvil.setItemMeta(meta);
+            Location anvilPos=playerPositionLookingUp.clone().add(0, anvilHeight, 0);
             anvilPos.setPitch(0);
             anvilPos.setYaw(0);
             anvilPos.getWorld().getBlockAt(anvilPos).setType(Material.ANVIL);
@@ -151,15 +156,28 @@ public class AnvilDropper implements Runnable {
             player.teleport(playerPosition);
         }
         if (!playerThawed) {
+            if (anvilThrown && !anvilRemoved) {
+                // This doesn't work, seems like currentPosition isn't updated with
+                // a possibly changed pitch/yaw at this point. But as we can't
+                // set a block display name anyway ...
+                Location currentPosition = player.getLocation();
+                playerPositionLookingUp.setYaw(currentPosition.getYaw());
+                playerPositionLookingUp.setPitch(currentPosition.getPitch());
+            }
             player.teleport(playerPositionLookingUp);
         }
         
         if (!anvilRemoved && ticksSinceInception > ticksToRemoveAnvil) {
             anvilRemoved=true;
-            if (playerPosition.getWorld().getBlockAt(playerPosition).getType()==Material.ANVIL) {
-                playerPosition.getWorld().getBlockAt(playerPosition).setType(Material.AIR);
+            // System.out.println("trying to remove anvil at "+playerPositionLookingUp.toString());
+            Block block = playerPositionLookingUp.getWorld().getBlockAt(playerPositionLookingUp);
+            Material mat=block.getType();
+            if (mat==Material.ANVIL || mat==Material.CHIPPED_ANVIL || mat==Material.DAMAGED_ANVIL) {
+                block.setType(Material.AIR);
                 if (removeMessage!=null)
                     player.sendMessage(removeMessage);
+            } else {
+                plugin.getLogger().log(Level.WARNING, "Block to remove that should have been an anvil had material {0}", block.getType().getKey().getKey());
             }
         }
 

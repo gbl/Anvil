@@ -1,7 +1,9 @@
 ## YAML Template.
 name: Anvil
 main: de.guntram.bukkit.anvil.Anvil
-version: 0.11
+version: 1.13
+api-version: 1.13
+
 commands:
     anvil:
         description: Let an anvil drop on a player.
